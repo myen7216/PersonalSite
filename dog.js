@@ -16,8 +16,20 @@
   const BOOST_SPAWN_RATE_SCALE = 0.3;
   const BOOST_RESPAWN_MS = Math.round(BASE_BOOST_RESPAWN_MS / BOOST_SPAWN_RATE_SCALE);
   const POWERUP_IMAGES = {
-    "boost-rainbow": "./assets/powerups/rainbow.png",
-    "boost-mega": "./assets/powerups/mega.png"
+    "boost-rainbow": "./assets/dog/star.png"
+  };
+  const DOG_THOUGHTS = [
+    "my name is java! no, not the coffee...",
+    "pet me now, slave.",
+    "where are my snacks! give me snacks.",
+    "i lobe michael hes my friend",
+    "this page looks pawsome today"
+  ];
+  const POSE_SCALES = {
+    standing: 1,
+    running: 1,
+    sitting: 0.6,
+    dragging: 0.6
   };
 
   const dog = document.createElement("div");
@@ -33,8 +45,24 @@
   toyLayer.className = "dog-toy-layer";
   document.body.appendChild(toyLayer);
 
+  const thought = document.createElement("div");
+  thought.className = "dog-thought";
+  thought.innerHTML = `
+    <div class="dog-thought-dots" aria-hidden="true">
+      <span></span><span></span><span></span>
+    </div>
+    <div class="dog-thought-cloud">
+      <span class="dog-thought-text"></span>
+    </div>
+  `;
+  document.body.appendChild(thought);
+
   const toys = [];
   const dogImg = dog.querySelector("img");
+  const thoughtText = thought.querySelector(".dog-thought-text");
+  let thoughtRevealTimer = null;
+  let thoughtHideTimer = null;
+  let thoughtTypingTimer = null;
   const drag = {
     active: false,
     pointerId: null,
@@ -57,8 +85,8 @@
     colorCheckTimer: 0,
     dustTimer: 0,
     scale: 1,
+    poseScale: 1,
     rainbowUntil: 0,
-    megaUntil: 0,
     initializedFromSaved: false,
     saveTickAt: 0
   };
@@ -105,7 +133,6 @@
     }
     state.scale = typeof saved.scale === "number" ? saved.scale : state.scale;
     state.rainbowUntil = nowPerf + Math.max(0, Number(saved.rainbowRemainingMs || 0));
-    state.megaUntil = nowPerf + Math.max(0, Number(saved.megaRemainingMs || 0));
     state.sitUntil = nowPerf + Math.max(0, Number(saved.sitRemainingMs || 0));
     state.initializedFromSaved = true;
   }
@@ -120,7 +147,6 @@
       runFrameIndex: state.runFrameIndex,
       scale: state.scale,
       rainbowRemainingMs: Math.max(0, state.rainbowUntil - nowPerf),
-      megaRemainingMs: Math.max(0, state.megaUntil - nowPerf),
       sitRemainingMs: Math.max(0, state.sitUntil - nowPerf),
       savedAt: nowWall
     };
@@ -170,6 +196,101 @@
 
   function randomRainbowColor() {
     return RAINBOW_COLORS[Math.floor(Math.random() * RAINBOW_COLORS.length)];
+  }
+
+  function clearThoughtTimers() {
+    if (thoughtRevealTimer) {
+      clearTimeout(thoughtRevealTimer);
+      thoughtRevealTimer = null;
+    }
+    if (thoughtHideTimer) {
+      clearTimeout(thoughtHideTimer);
+      thoughtHideTimer = null;
+    }
+    if (thoughtTypingTimer) {
+      clearInterval(thoughtTypingTimer);
+      thoughtTypingTimer = null;
+    }
+  }
+
+  function pickThought() {
+    return DOG_THOUGHTS[Math.floor(Math.random() * DOG_THOUGHTS.length)];
+  }
+
+  function typeThoughtText(text, durationMs) {
+    if (!thoughtText) {
+      return;
+    }
+    if (thoughtTypingTimer) {
+      clearInterval(thoughtTypingTimer);
+      thoughtTypingTimer = null;
+    }
+    thoughtText.textContent = "";
+    const chars = Array.from(text);
+    if (!chars.length) {
+      return;
+    }
+    const stepMs = Math.max(18, Math.floor(durationMs / chars.length));
+    let idx = 0;
+    thoughtTypingTimer = setInterval(() => {
+      idx += 1;
+      thoughtText.textContent = chars.slice(0, idx).join("");
+      if (idx >= chars.length) {
+        clearInterval(thoughtTypingTimer);
+        thoughtTypingTimer = null;
+      }
+    }, stepMs);
+  }
+
+  function positionThoughtBubble() {
+    if (!thought.classList.contains("is-visible")) {
+      return;
+    }
+    const bounds = getDogVisualBounds();
+    const bubbleW = thought.offsetWidth || 220;
+    const bubbleH = thought.offsetHeight || 80;
+
+    let left = bounds.right + 10;
+    if (left + bubbleW > window.innerWidth - 8) {
+      left = bounds.left - bubbleW - 10;
+    }
+    let top = bounds.top - 26;
+    top = Math.max(8, Math.min(top, window.innerHeight - bubbleH - 8));
+
+    thought.style.left = `${Math.round(left)}px`;
+    thought.style.top = `${Math.round(top)}px`;
+  }
+
+  function hideThoughtBubble() {
+    clearThoughtTimers();
+    thought.classList.remove("is-visible", "is-dots", "is-cloud");
+    if (thoughtText) {
+      thoughtText.textContent = "";
+    }
+  }
+
+  function startThoughtBubble() {
+    if (drag.active) {
+      return;
+    }
+    clearThoughtTimers();
+    thought.classList.add("is-visible", "is-dots");
+    thought.classList.remove("is-cloud");
+    if (thoughtText) {
+      thoughtText.textContent = "";
+    }
+    positionThoughtBubble();
+
+    thoughtRevealTimer = setTimeout(() => {
+      thought.classList.remove("is-dots");
+      thought.classList.add("is-cloud");
+      typeThoughtText(pickThought(), 900);
+      positionThoughtBubble();
+
+      thoughtHideTimer = setTimeout(() => {
+        hideThoughtBubble();
+      }, 8000);
+    }, 650);
   }
 
   function intersects(a, b) {
@@ -281,35 +402,15 @@
   }
 
   function setupToys() {
-    const savedToys = readSavedToyState(performance.now());
-    makeToy("boost-rainbow", "Rainbow boost", "R+");
-    makeToy("boost-mega", "Mega mushroom boost", "M+");
-
-    if (!savedToys) {
-      return;
-    }
-
-    toys.forEach((toy) => {
-      const saved = savedToys.find((entry) => entry.type === toy.type);
-      if (!saved) {
-        return;
-      }
-      toy.active = saved.active;
-      toy.nextSpawnAt = saved.nextSpawnAt;
-      toy.x = saved.x;
-      toy.y = saved.y;
-      toy.el.style.left = `${toy.x}px`;
-      toy.el.style.top = `${toy.y}px`;
-      if (!toy.active) {
-        toy.el.classList.add("consumed");
-      } else {
-        toy.el.classList.remove("consumed");
-      }
-    });
+    // Rainbow mode is now triggered only by touching text.
+    // No collectible power-up toys are spawned.
   }
 
   function wrapElementText(el) {
-    if (!el || el.dataset.dogColorized === "true") {
+    if (!el) {
+      return;
+    }
+    if (el.dataset.dogColorized === "true" && el.querySelector(".text-char")) {
       return;
     }
     if (el.classList && el.classList.contains("text-char")) {
@@ -327,16 +428,29 @@
       }
 
       const frag = document.createDocumentFragment();
-      for (const ch of node.textContent) {
-        if (ch === " ") {
-          frag.appendChild(document.createTextNode(ch));
-        } else {
+      const parts = node.textContent.split(/(\s+)/);
+      parts.forEach((part) => {
+        if (!part) {
+          return;
+        }
+
+        if (/^\s+$/.test(part)) {
+          frag.appendChild(document.createTextNode(part));
+          return;
+        }
+
+        const word = document.createElement("span");
+        word.className = "text-word";
+
+        for (const ch of part) {
           const span = document.createElement("span");
           span.className = "text-char";
           span.textContent = ch;
-          frag.appendChild(span);
+          word.appendChild(span);
         }
-      }
+
+        frag.appendChild(word);
+      });
 
       node.replaceWith(frag);
       hasChanges = true;
@@ -364,14 +478,30 @@
     wrapTextForColoring(document.body);
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
+        if (mutation.type === "characterData") {
+          const parent = mutation.target.parentElement;
+          if (parent) {
+            wrapTextForColoring(parent);
+          }
+          return;
+        }
+
+        if (mutation.target && mutation.target.nodeType === Node.ELEMENT_NODE) {
+          wrapTextForColoring(mutation.target);
+        }
+
         mutation.addedNodes.forEach((node) => {
           if (node.nodeType === Node.ELEMENT_NODE) {
             wrapTextForColoring(node);
+            return;
+          }
+          if (node.nodeType === Node.TEXT_NODE && node.parentElement) {
+            wrapTextForColoring(node.parentElement);
           }
         });
       });
     });
-    observer.observe(document.body, { childList: true, subtree: true });
+    observer.observe(document.body, { childList: true, subtree: true, characterData: true });
   }
 
   function checkTextTouches(now) {
@@ -388,11 +518,14 @@
       bottom: dogRect.bottom - 10
     };
 
+    let touchedAnyText = false;
+
     document.querySelectorAll(".text-char").forEach((char) => {
       const rect = char.getBoundingClientRect();
       if (!intersects(noseArea, rect)) {
         return;
       }
+      touchedAnyText = true;
 
       const nextAllowed = Number(char.dataset.nextColorTime || "0");
       if (now < nextAllowed) {
@@ -413,6 +546,11 @@
         char.style.textShadow = "";
       }, 5000);
     });
+
+    if (touchedAnyText) {
+      state.rainbowUntil = Math.max(state.rainbowUntil, now + 900);
+      dog.classList.add("dog-rainbow");
+    }
   }
 
   function activatePowerUp(type, now) {
@@ -422,15 +560,10 @@
       return;
     }
 
-    if (type === "boost-mega") {
-      state.megaUntil = now + 30000;
-      state.scale = 4;
-      dog.classList.add("dog-mega");
-    }
   }
 
   function hasActivePowerUp(now) {
-    return state.rainbowUntil > now || state.megaUntil > now;
+    return state.rainbowUntil > now;
   }
 
   function checkToyTouches(now) {
@@ -482,13 +615,7 @@
       dog.classList.remove("dog-rainbow");
     }
 
-    if (state.megaUntil > now) {
-      state.scale = 4;
-      dog.classList.add("dog-mega");
-    } else {
-      state.scale += (1 - state.scale) * 0.08;
-      dog.classList.remove("dog-mega");
-    }
+    state.scale += (1 - state.scale) * 0.08;
   }
 
   function spawnDust(now, facingLeft) {
@@ -555,18 +682,22 @@
   function setImageForState() {
     if (state.mode === "drag") {
       dogImg.src = DOG_IMAGES.dragging || DOG_IMAGES.standing;
+      state.poseScale = POSE_SCALES.dragging;
       return;
     }
     if (state.mode === "sit") {
       dogImg.src = DOG_IMAGES.sitting;
+      state.poseScale = POSE_SCALES.sitting;
       return;
     }
     if (state.mode === "idle") {
       dogImg.src = DOG_IMAGES.standing;
+      state.poseScale = POSE_SCALES.standing;
       return;
     }
     const runFrames = [DOG_IMAGES.runningA, DOG_IMAGES.runningB, DOG_IMAGES.runningC || DOG_IMAGES.runningB];
     dogImg.src = runFrames[state.runFrameIndex] || DOG_IMAGES.runningA;
+    state.poseScale = POSE_SCALES.running;
   }
 
   function startDrag(event) {
@@ -581,6 +712,7 @@
     drag.offsetRatioY = rect.height > 0 ? (event.clientY - rect.top) / rect.height : 0.5;
     drag.offsetRatioX = Math.min(Math.max(drag.offsetRatioX, 0), 1);
     drag.offsetRatioY = Math.min(Math.max(drag.offsetRatioY, 0), 1);
+    hideThoughtBubble();
     state.mode = "drag";
     dog.classList.add("dog-dragging");
     if (typeof dog.setPointerCapture === "function") {
@@ -690,7 +822,8 @@
     dog.style.top = `${state.y}px`;
     dog.style.setProperty("--dog-facing", `${facingLeft}`);
     dog.style.setProperty("--dog-scale", `${state.scale}`);
-    dog.classList.toggle("dog-sitting", state.mode === "sit");
+    dog.style.setProperty("--dog-pose-scale", `${state.poseScale}`);
+    positionThoughtBubble();
 
     if (movedThisFrame) {
       spawnDust(now, facingLeft < 0);
@@ -725,6 +858,7 @@
     saveToyState(nowPerf);
   });
   dog.addEventListener("pointerdown", startDrag);
+  dog.addEventListener("pointerenter", startThoughtBubble);
   window.addEventListener("pointermove", moveDrag);
   window.addEventListener("pointerup", endDrag);
   window.addEventListener("pointercancel", endDrag);

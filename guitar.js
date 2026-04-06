@@ -1,8 +1,9 @@
-(() => {
+﻿(() => {
   const stage = document.getElementById("guitar-stage");
   const label = document.getElementById("guitar-label");
+  const audioStatus = document.getElementById("guitar-audio-status");
 
-  if (!stage || !label) {
+  if (!stage || !label || !audioStatus) {
     return;
   }
 
@@ -14,13 +15,52 @@
     return;
   }
 
+  videos.forEach((video) => {
+    if (!video) {
+      return;
+    }
+    video.muted = true;
+    video.controls = false;
+  });
+
+  slides.forEach((slide, idx) => {
+    const video = videos[idx];
+    const title = slide.dataset.title || "video";
+    const placeholder = document.createElement("div");
+    placeholder.className = "guitar-video-placeholder";
+    placeholder.textContent = title;
+    slide.appendChild(placeholder);
+
+    if (!video) {
+      return;
+    }
+
+    const markReady = () => {
+      slide.classList.add("video-ready");
+    };
+
+    const markError = () => {
+      slide.classList.remove("video-ready");
+      slide.classList.add("video-error");
+    };
+
+    video.addEventListener("loadeddata", markReady);
+    video.addEventListener("canplay", markReady);
+    video.addEventListener("error", markError);
+  });
+
   const state = {
     index: 0,
     dragging: false,
     pointerId: null,
     startX: 0,
-    dragX: 0
+    startY: 0,
+    startAt: 0,
+    dragX: 0,
+    audioMuted: true
   };
+
+  let badgeTimer = null;
 
   function mod(n, m) {
     return ((n % m) + m) % m;
@@ -47,12 +87,54 @@
     });
   }
 
+  function updateAudioStatus() {
+    const icon = state.audioMuted ? "\uD83D\uDD07" : "\uD83D\uDD0A";
+    const text = state.audioMuted ? "muted" : "sound on";
+    audioStatus.textContent = `${icon} ${text}`;
+  }
+
+  function positionAudioStatus() {
+    const activeSlide = slides[state.index];
+    if (!activeSlide) {
+      return;
+    }
+
+    const stageRect = stage.getBoundingClientRect();
+    const slideRect = activeSlide.getBoundingClientRect();
+    const gap = 8;
+    const x = slideRect.right - stageRect.left - audioStatus.offsetWidth;
+    const y = slideRect.bottom - stageRect.top + gap;
+
+    audioStatus.style.left = `${Math.max(6, x)}px`;
+    audioStatus.style.top = `${Math.max(6, y)}px`;
+  }
+
+  function hideAudioStatus() {
+    audioStatus.style.opacity = "0";
+  }
+
+  function showAudioStatus() {
+    audioStatus.style.opacity = "1";
+    positionAudioStatus();
+  }
+
+  function scheduleBadgeLockShow(delayMs) {
+    if (badgeTimer) {
+      clearTimeout(badgeTimer);
+    }
+    badgeTimer = setTimeout(() => {
+      showAudioStatus();
+      badgeTimer = null;
+    }, delayMs);
+  }
+
   function syncPlayback() {
     videos.forEach((video, idx) => {
       if (!video) {
         return;
       }
       if (idx === state.index) {
+        video.muted = state.audioMuted;
         const playPromise = video.play();
         if (playPromise && typeof playPromise.catch === "function") {
           playPromise.catch(() => {});
@@ -61,6 +143,21 @@
         video.pause();
       }
     });
+    updateAudioStatus();
+  }
+
+  function toggleActiveAudio() {
+    const video = videos[state.index];
+    if (!video) {
+      return;
+    }
+    state.audioMuted = !state.audioMuted;
+    video.muted = state.audioMuted;
+    const playPromise = video.play();
+    if (playPromise && typeof playPromise.catch === "function") {
+      playPromise.catch(() => {});
+    }
+    updateAudioStatus();
   }
 
   function render(withTransition) {
@@ -77,7 +174,9 @@
       const z = 100 - Math.round(absRel * 12);
 
       slide.classList.toggle("is-center", isCenter);
-      slide.style.transition = withTransition ? "transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 420ms ease" : "none";
+      slide.style.transition = withTransition
+        ? "transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 420ms ease"
+        : "none";
       slide.style.transform = `translate(calc(-50% + ${x}px), -50%) scale(${scale})`;
       slide.style.opacity = `${opacity}`;
       slide.style.zIndex = `${z}`;
@@ -85,6 +184,10 @@
 
     const title = slides[state.index]?.dataset.title || "Guitar Video";
     label.textContent = title;
+
+    if (!state.dragging) {
+      requestAnimationFrame(positionAudioStatus);
+    }
   }
 
   function snapFromDrag() {
@@ -102,7 +205,9 @@
 
     state.index = mod(state.index + shift, total);
     state.dragX = 0;
+    hideAudioStatus();
     render(true);
+    scheduleBadgeLockShow(430);
     setTimeout(syncPlayback, 430);
   }
 
@@ -113,9 +218,13 @@
     state.dragging = true;
     state.pointerId = event.pointerId;
     state.startX = event.clientX;
+    state.startY = event.clientY;
+    state.startAt = performance.now();
     state.dragX = 0;
     stage.classList.add("is-dragging");
+    hideAudioStatus();
     pauseAll();
+
     if (typeof stage.setPointerCapture === "function") {
       try {
         stage.setPointerCapture(event.pointerId);
@@ -137,9 +246,24 @@
     if (!state.dragging || event.pointerId !== state.pointerId) {
       return;
     }
+
+    const isTap =
+      Math.abs(state.dragX) < 12 &&
+      Math.abs(event.clientY - state.startY) < 12 &&
+      performance.now() - state.startAt < 320;
+
     state.dragging = false;
     state.pointerId = null;
     stage.classList.remove("is-dragging");
+
+    if (isTap) {
+      state.dragX = 0;
+      render(true);
+      toggleActiveAudio();
+      showAudioStatus();
+      return;
+    }
+
     snapFromDrag();
   }
 
@@ -147,8 +271,13 @@
   window.addEventListener("pointermove", onPointerMove);
   window.addEventListener("pointerup", onPointerUp);
   window.addEventListener("pointercancel", onPointerUp);
-  window.addEventListener("resize", () => render(false));
+  window.addEventListener("resize", () => {
+    render(false);
+    requestAnimationFrame(showAudioStatus);
+  });
 
   render(false);
   syncPlayback();
+  updateAudioStatus();
+  requestAnimationFrame(showAudioStatus);
 })();

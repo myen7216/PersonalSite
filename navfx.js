@@ -28,32 +28,50 @@
     }
   }
 
-  function sleep(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+  function randomChar() {
+    const chars = "abcdefghijklmnopqrstuvwxyz";
+    return chars[Math.floor(Math.random() * chars.length)];
   }
 
-  async function typeText(el, text, stepMs) {
-    el.textContent = "";
-    for (const ch of text) {
-      el.textContent += ch;
-      // eslint-disable-next-line no-await-in-loop
-      await sleep(stepMs);
-    }
-  }
+  async function scrambleToText(el, text, totalMs) {
+    const finalChars = Array.from(text);
+    const stepMs = Math.max(32, Math.floor(totalMs / Math.max(1, finalChars.length + 7)));
+    const finalTime = stepMs * finalChars.length + 260;
 
-  async function deleteThenType(el, fromText, toText, totalMs) {
-    el.textContent = fromText;
-    const deleteMs = Math.max(26, Math.floor(totalMs * 0.45 / Math.max(1, fromText.length)));
-    const typeMs = Math.max(26, Math.floor(totalMs * 0.45 / Math.max(1, toText.length)));
+    const scrambleSeed = finalChars.map((ch) => (/[a-z]/i.test(ch) ? randomChar() : ch));
+    el.textContent = scrambleSeed.join("");
 
-    while (el.textContent.length > 0) {
-      el.textContent = el.textContent.slice(0, -1);
-      // eslint-disable-next-line no-await-in-loop
-      await sleep(deleteMs);
-    }
+    await new Promise((resolve) => {
+      const start = performance.now();
 
-    await sleep(160);
-    await typeText(el, toText, typeMs);
+      function render(now) {
+        const elapsed = now - start;
+        const next = finalChars.map((ch, idx) => {
+          if (!/[a-z]/i.test(ch)) {
+            return ch;
+          }
+
+          const revealAt = idx * stepMs;
+          if (elapsed >= revealAt) {
+            return ch;
+          }
+
+          return randomChar();
+        });
+
+        el.textContent = next.join("");
+
+        if (elapsed < finalTime) {
+          requestAnimationFrame(render);
+          return;
+        }
+
+        el.textContent = text;
+        resolve();
+      }
+
+      requestAnimationFrame(render);
+    });
   }
 
   async function runFx(from, to) {
@@ -68,20 +86,9 @@
     }
 
     const toLabel = LABELS[to] || titleRoot.dataset.pageTitle || "";
-    const fromLabel = LABELS[from] || "";
 
-    if (from === "home") {
-      textEl.textContent = toLabel;
-      return;
-    }
-
-    if (
-      (from === "guitar" && to === "projects") ||
-      (from === "projects" && to === "guitar")
-    ) {
-      titleRoot.classList.add("is-typing");
-      await deleteThenType(textEl, fromLabel, toLabel, 2600);
-      titleRoot.classList.remove("is-typing");
+    if (to === "guitar" || to === "projects") {
+      await scrambleToText(textEl, toLabel, 1400);
       return;
     }
 
