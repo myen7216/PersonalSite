@@ -57,10 +57,12 @@
     startY: 0,
     startAt: 0,
     dragX: 0,
-    audioMuted: true
+    audioMuted: false
   };
 
   let badgeTimer = null;
+  let badgeTrackRaf = null;
+  let badgeTrackUntil = 0;
 
   function mod(n, m) {
     return ((n % m) + m) % m;
@@ -104,18 +106,47 @@
     const gap = 8;
     const x = slideRect.right - stageRect.left - audioStatus.offsetWidth;
     const y = slideRect.bottom - stageRect.top + gap;
+    const maxX = stage.clientWidth - audioStatus.offsetWidth - 6;
+    const maxY = stage.clientHeight - audioStatus.offsetHeight - 6;
+    const clampedX = Math.min(Math.max(6, x), Math.max(6, maxX));
+    const clampedY = Math.min(Math.max(6, y), Math.max(6, maxY));
 
-    audioStatus.style.left = `${Math.max(6, x)}px`;
-    audioStatus.style.top = `${Math.max(6, y)}px`;
+    audioStatus.style.left = `${clampedX}px`;
+    audioStatus.style.top = `${clampedY}px`;
+  }
+
+  function stopBadgeTracking() {
+    if (badgeTrackRaf) {
+      cancelAnimationFrame(badgeTrackRaf);
+      badgeTrackRaf = null;
+    }
+  }
+
+  function trackBadgePosition(now) {
+    positionAudioStatus();
+    if (now < badgeTrackUntil && audioStatus.style.opacity !== "0") {
+      badgeTrackRaf = requestAnimationFrame(trackBadgePosition);
+      return;
+    }
+    badgeTrackRaf = null;
+  }
+
+  function startBadgeTracking(durationMs = 820) {
+    badgeTrackUntil = performance.now() + durationMs;
+    if (!badgeTrackRaf) {
+      badgeTrackRaf = requestAnimationFrame(trackBadgePosition);
+    }
   }
 
   function hideAudioStatus() {
     audioStatus.style.opacity = "0";
+    stopBadgeTracking();
   }
 
   function showAudioStatus() {
     audioStatus.style.opacity = "1";
     positionAudioStatus();
+    startBadgeTracking(900);
   }
 
   function scheduleBadgeLockShow(delayMs) {

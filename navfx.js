@@ -4,9 +4,9 @@
   const KEY = "personal-site-nav-transition";
 
   const LABELS = {
-    home: "michael. y",
-    guitar: "michael. y's guitar videos",
-    projects: "michael. y's pinterest board"
+    home: "michael yen",
+    guitar: "michael's guitar videos",
+    projects: "michael's pinterest board"
   };
 
   function pageFromHref(href) {
