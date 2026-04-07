@@ -1,6 +1,6 @@
 (() => {
   const current = document.body?.dataset?.page || "";
-  const dockLinks = Array.from(document.querySelectorAll(".site-dock a[href]"));
+  let dockLinks = Array.from(document.querySelectorAll(".site-dock a[href]"));
   const KEY = "personal-site-nav-transition";
 
   const LABELS = {
@@ -26,6 +26,37 @@
     } catch {
       return "";
     }
+  }
+
+  function centerActiveDockLink() {
+    const dock = document.querySelector(".site-dock");
+    if (!dock) {
+      return;
+    }
+
+    const links = Array.from(dock.querySelectorAll("a[href]"));
+    if (links.length < 3) {
+      return;
+    }
+
+    const active = links.find((link) => link.classList.contains("active"));
+    if (!active) {
+      return;
+    }
+
+    const targetIndex = Math.floor(links.length / 2);
+    const activeIndex = links.indexOf(active);
+    if (activeIndex === targetIndex) {
+      return;
+    }
+
+    active.remove();
+    const currentLinks = Array.from(dock.querySelectorAll("a[href]"));
+    if (targetIndex >= currentLinks.length) {
+      dock.appendChild(active);
+      return;
+    }
+    dock.insertBefore(active, currentLinks[targetIndex]);
   }
 
   function randomChar() {
@@ -94,6 +125,9 @@
 
     textEl.textContent = toLabel;
   }
+
+  centerActiveDockLink();
+  dockLinks = Array.from(document.querySelectorAll(".site-dock a[href]"));
 
   dockLinks.forEach((link) => {
     link.addEventListener("click", () => {

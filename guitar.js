@@ -92,7 +92,9 @@
   function updateAudioStatus() {
     const icon = state.audioMuted ? "\uD83D\uDD07" : "\uD83D\uDD0A";
     const text = state.audioMuted ? "muted" : "sound on";
-    audioStatus.textContent = `${icon} ${text}`;
+    audioStatus.textContent = icon;
+    audioStatus.setAttribute("aria-label", text);
+    audioStatus.title = text;
   }
 
   function positionAudioStatus() {

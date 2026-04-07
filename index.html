@@ -3,19 +3,53 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Michael | Home</title>
+  <title>home | myen</title>
+  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
   <link rel="stylesheet" href="./styles.css" />
   <script defer src="./dog.js"></script>
   <script defer src="./navfx.js"></script>
   <script defer src="./home-intro.js"></script>
+  <script defer src="./home-gallery.js"></script>
 </head>
 <body data-page="home">
   <main class="home-main home-clean">
     <section class="home-clean-hero">
       <h1 class="clean-name knockable">michael yen</h1>
+      <div class="home-social-links knockable" aria-label="Social links">
+        <a href="https://linkedin.com/in/michaelyen2323" target="_blank" rel="noreferrer" aria-label="LinkedIn" class="social-linkedin-html">
+          <span aria-hidden="true">in</span>
+        </a>
+        <a href="https://github.com/myen7216" target="_blank" rel="noreferrer" aria-label="GitHub">
+          <img src="./assets/social/github.svg" alt="" loading="lazy" />
+        </a>
+        <a href="https://www.instagram.com/myen7216/" target="_blank" rel="noreferrer" aria-label="Instagram">
+          <img src="./assets/social/instagram.svg" alt="" loading="lazy" />
+        </a>
+      </div>
       <p class="clean-blurb knockable">hey there! my name is michael and i love design and engineering. 
         i am currently in my first year studying systems design engineering at the university of waterloo. 
         beyond my studies, i like playing guitar, fashion, and my dog java. feel free to explore what my page has to offer!</p>
+      <section class="home-photo-collage knockable" aria-label="Photo collage">
+        <div class="collage-stack collage-stack-left">
+          <figure class="collage-tile" data-photo-title="snowboarding in japan" data-photo-desc="best time of my life">
+            <img src="./assets/photos/snowboarding.png" alt="Mountain landscape" loading="lazy" />
+          </figure>
+          <figure class="collage-tile" data-photo-title="CHRONO video shoot" data-photo-desc="our design, CHRONO, won second place in the international design competition figbuild2026. proud of the entire team!">
+            <img src="./assets/photos/chronoshoot.jpg" alt="Concert crowd with lights" loading="lazy" />
+          </figure>
+        </div>
+        <figure class="collage-tile collage-tile-hero" data-photo-title="golden gate bridge headshot in sf" data-photo-desc="a fun trip to remember with my amazing friends">
+          <img src="./assets/photos/sf.JPEG" alt="Urban architecture" loading="lazy" />
+        </figure>
+        <div class="collage-stack collage-stack-right">
+          <figure class="collage-tile" data-photo-title="taiwan fog" data-photo-desc="in the taiwanese mountains, enjoying the view (there were many cows here)">
+            <img src="./assets/photos/fence.png" alt="Coding workspace" loading="lazy" />
+          </figure>
+          <figure class="collage-tile" data-photo-title="sister's birthday" data-photo-desc="celebrating my sister's 20th birthday in montreal">
+            <img src="./assets/photos/astoriasbday.jpg" alt="Notebook and design planning" loading="lazy" />
+          </figure>
+        </div>
+      </section>
     </section>
   </main>
 

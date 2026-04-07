@@ -19,11 +19,26 @@
     "boost-rainbow": "./assets/dog/star.png"
   };
   const DOG_THOUGHTS = [
-    "my name is java! no, not the coffee...",
-    "pet me now, slave.",
-    "where are my snacks! give me snacks.",
-    "i lobe michael hes my friend",
-    "this page looks pawsome today"
+    "squirrel spotted. mission accepted.",
+    "i run first and ask questions later",
+    "is that steak for me? say yes",
+    "my tug toy and i are not done yet",
+    "zoomies are a full time profession",
+    "i heard a squirrel talk trash",
+    "snack break now please and thanks",
+    "i am 80% chaos 20% cuddle",
+    "steak is my love language",
+    "i patrol this yard for squirrels",
+    "the tug toy started this not me",
+    "i do crimes then give puppy eyes",
+    "i chase squirrels with passion",
+    "run run run okay now nap",
+    "i can smell steak from two blocks away",
+    "i am fast fluffy and slightly unhinged",
+    "squirrel drama never sleeps",
+    "my tug toy is my bestie",
+    "if i sit do i get two snacks",
+    "today's schedule: zoomies and steak"
   ];
   const POSE_SCALES = {
     standing: 1,
@@ -63,6 +78,7 @@
   let thoughtRevealTimer = null;
   let thoughtHideTimer = null;
   let thoughtTypingTimer = null;
+  let thoughtVariant = 0;
   const drag = {
     active: false,
     pointerId: null,
@@ -86,6 +102,7 @@
     dustTimer: 0,
     scale: 1,
     poseScale: 1,
+    facing: 1,
     rainbowUntil: 0,
     initializedFromSaved: false,
     saveTickAt: 0
@@ -249,14 +266,20 @@
     const bounds = getDogVisualBounds();
     const bubbleW = thought.offsetWidth || 220;
     const bubbleH = thought.offsetHeight || 80;
+    const preferRight = state.facing >= 0;
 
-    let left = bounds.right + 10;
-    if (left + bubbleW > window.innerWidth - 8) {
-      left = bounds.left - bubbleW - 10;
+    let left = preferRight ? bounds.right + 10 : bounds.left - bubbleW - 10;
+    if (preferRight && left + bubbleW > window.innerWidth - 8) {
+      left = window.innerWidth - bubbleW - 8;
+    }
+    if (!preferRight && left < 8) {
+      left = 8;
     }
     let top = bounds.top - 26;
     top = Math.max(8, Math.min(top, window.innerHeight - bubbleH - 8));
 
+    thought.classList.toggle("side-right", preferRight);
+    thought.classList.toggle("side-left", !preferRight);
     thought.style.left = `${Math.round(left)}px`;
     thought.style.top = `${Math.round(top)}px`;
   }
@@ -274,6 +297,8 @@
       return;
     }
     clearThoughtTimers();
+    thoughtVariant = (thoughtVariant + 1) % 2;
+    thought.classList.toggle("theme-coffee", thoughtVariant === 1);
     thought.classList.add("is-visible", "is-dots");
     thought.classList.remove("is-cloud");
     if (thoughtText) {
@@ -818,6 +843,7 @@
     repelFromNoGoZones();
 
     const facingLeft = state.targetX < state.x ? -1 : 1;
+    state.facing = facingLeft;
     dog.style.left = `${state.x}px`;
     dog.style.top = `${state.y}px`;
     dog.style.setProperty("--dog-facing", `${facingLeft}`);

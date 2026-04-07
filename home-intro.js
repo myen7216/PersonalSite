@@ -26,11 +26,20 @@
     node,
     text: node.textContent || ""
   }));
+  const animatedStates = [];
 
   const charRefs = [];
 
   function splitTextIntoChars(node) {
+    if (node.querySelector("img, svg, video, canvas")) {
+      return [];
+    }
+
     const text = node.textContent || "";
+    if (!text.trim()) {
+      return [];
+    }
+
     const frag = document.createDocumentFragment();
     const chars = [];
 
@@ -48,6 +57,10 @@
       chars.push(span);
     }
 
+    if (!chars.length) {
+      return [];
+    }
+
     node.textContent = "";
     node.appendChild(frag);
     return chars;
@@ -62,6 +75,7 @@
     const chars = splitTextIntoChars(state.node);
     if (chars.length) {
       charRefs.push(...chars);
+      animatedStates.push(state);
     }
   }
 
@@ -119,7 +133,7 @@
       return;
     }
 
-    for (const state of targetStates) {
+    for (const state of animatedStates) {
       state.node.textContent = state.text;
     }
   }
