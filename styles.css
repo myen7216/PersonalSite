@@ -127,7 +127,7 @@ nav a.active {
   max-height: 22rem;
   padding: 0.25rem 0.125in 0.6rem 0.2rem;
   border-color: transparent;
-  background: rgba(245, 250, 244, 0.28);
+  background: rgba(245, 250, 244, 0.48);
   box-shadow: none;
 }
 
@@ -150,20 +150,20 @@ nav a.active {
   transform-origin: left center;
   opacity: 0;
   pointer-events: none;
-  transform: translateX(-10px) scale(0.97);
-  transition: color 0.2s ease, transform 0.26s ease, opacity 0.2s ease;
+  transform: none;
+  transition: color 0.2s ease, opacity 0.24s ease;
 }
 
 .site-dock:hover a,
 .site-dock:focus-within a {
   opacity: 0.94;
   pointer-events: auto;
-  transform: translateX(0) scale(1);
+  transform: none;
 }
 
 .site-dock a:hover {
   color: #1c7a4a;
-  transform: translateX(3px) scale(1.03);
+  transform: scale(1.02);
   background: transparent;
   border: none;
   box-shadow: none;
@@ -181,7 +181,7 @@ nav a.active {
 
 .site-dock a.active:hover {
   color: #1c7a4a;
-  transform: translateX(3px);
+  transform: none;
 }
 
 .home-main,
