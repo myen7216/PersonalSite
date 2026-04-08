@@ -43,8 +43,8 @@
   const POSE_SCALES = {
     standing: 1,
     running: 1,
-    sitting: 0.6,
-    dragging: 0.6
+    sitting: 0.4,
+    dragging: 0.4
   };
 
   const dog = document.createElement("div");

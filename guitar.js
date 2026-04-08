@@ -1,4 +1,4 @@
-﻿(() => {
+(() => {
   const stage = document.getElementById("guitar-stage");
   const label = document.getElementById("guitar-label");
   const audioStatus = document.getElementById("guitar-audio-status");
@@ -10,6 +10,7 @@
   const slides = Array.from(stage.querySelectorAll(".guitar-slide"));
   const videos = slides.map((slide) => slide.querySelector("video"));
   const total = slides.length;
+  const ONE_EIGHTH_INCH_PX = 12;
 
   if (total === 0) {
     return;
@@ -63,6 +64,8 @@
   let badgeTimer = null;
   let badgeTrackRaf = null;
   let badgeTrackUntil = 0;
+  let labelTrackRaf = null;
+  let labelTrackUntil = 0;
 
   function mod(n, m) {
     return ((n % m) + m) % m;
@@ -77,7 +80,12 @@
   }
 
   function getStepDistance() {
-    return Math.max(280, Math.round(stage.clientWidth * 0.55));
+    const firstSlide = slides[0];
+    if (!firstSlide) {
+      return 320;
+    }
+    const slideWidth = firstSlide.getBoundingClientRect().width || 320;
+    return slideWidth + ONE_EIGHTH_INCH_PX;
   }
 
   function pauseAll() {
@@ -97,6 +105,28 @@
     audioStatus.title = text;
   }
 
+  function positionLabel() {
+    const activeSlide = slides[state.index];
+    if (!activeSlide) {
+      return;
+    }
+
+    const carousel = stage.closest(".guitar-carousel");
+    if (!carousel) {
+      return;
+    }
+
+    const carouselRect = carousel.getBoundingClientRect();
+    const slideRect = activeSlide.getBoundingClientRect();
+    const centerX = slideRect.left - carouselRect.left + slideRect.width / 2;
+    const topY = slideRect.bottom - carouselRect.top + 10;
+    const title = activeSlide.dataset.title || "Guitar Video";
+
+    label.textContent = title;
+    label.style.left = `${centerX}px`;
+    label.style.top = `${topY}px`;
+  }
+
   function positionAudioStatus() {
     const activeSlide = slides[state.index];
     if (!activeSlide) {
@@ -105,13 +135,13 @@
 
     const stageRect = stage.getBoundingClientRect();
     const slideRect = activeSlide.getBoundingClientRect();
-    const gap = 8;
-    const x = slideRect.right - stageRect.left - audioStatus.offsetWidth;
-    const y = slideRect.bottom - stageRect.top + gap;
-    const maxX = stage.clientWidth - audioStatus.offsetWidth - 6;
-    const maxY = stage.clientHeight - audioStatus.offsetHeight - 6;
-    const clampedX = Math.min(Math.max(6, x), Math.max(6, maxX));
-    const clampedY = Math.min(Math.max(6, y), Math.max(6, maxY));
+    const inset = 14;
+    const x = slideRect.right - stageRect.left - audioStatus.offsetWidth - inset;
+    const y = slideRect.bottom - stageRect.top - audioStatus.offsetHeight - inset;
+    const maxX = stage.clientWidth - audioStatus.offsetWidth - inset;
+    const maxY = stage.clientHeight - audioStatus.offsetHeight - inset;
+    const clampedX = Math.min(Math.max(inset, x), Math.max(inset, maxX));
+    const clampedY = Math.min(Math.max(inset, y), Math.max(inset, maxY));
 
     audioStatus.style.left = `${clampedX}px`;
     audioStatus.style.top = `${clampedY}px`;
@@ -121,6 +151,29 @@
     if (badgeTrackRaf) {
       cancelAnimationFrame(badgeTrackRaf);
       badgeTrackRaf = null;
+    }
+  }
+
+  function stopLabelTracking() {
+    if (labelTrackRaf) {
+      cancelAnimationFrame(labelTrackRaf);
+      labelTrackRaf = null;
+    }
+  }
+
+  function trackLabelPosition(now) {
+    positionLabel();
+    if (state.dragging || now < labelTrackUntil) {
+      labelTrackRaf = requestAnimationFrame(trackLabelPosition);
+      return;
+    }
+    labelTrackRaf = null;
+  }
+
+  function startLabelTracking(durationMs = 650) {
+    labelTrackUntil = performance.now() + durationMs;
+    if (!labelTrackRaf) {
+      labelTrackRaf = requestAnimationFrame(trackLabelPosition);
     }
   }
 
@@ -202,21 +255,19 @@
       const absRel = Math.abs(rel);
       const isCenter = absRel < 0.5;
       const x = rel * step;
-      const scale = Math.max(0.7, 1 - absRel * 0.18);
-      const opacity = Math.max(0.32, 1 - absRel * 0.24);
-      const z = 100 - Math.round(absRel * 12);
+      const z = 100 - Math.round(absRel * 10);
 
       slide.classList.toggle("is-center", isCenter);
       slide.style.transition = withTransition
         ? "transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 420ms ease"
         : "none";
-      slide.style.transform = `translate(calc(-50% + ${x}px), -50%) scale(${scale})`;
-      slide.style.opacity = `${opacity}`;
+      slide.style.transform = `translate(calc(-50% + ${x}px), -50%)`;
+      slide.style.opacity = "1";
       slide.style.zIndex = `${z}`;
     });
 
-    const title = slides[state.index]?.dataset.title || "Guitar Video";
-    label.textContent = title;
+    positionLabel();
+    startLabelTracking(withTransition ? 700 : 200);
 
     if (!state.dragging) {
       requestAnimationFrame(positionAudioStatus);
@@ -306,6 +357,7 @@
   window.addEventListener("pointercancel", onPointerUp);
   window.addEventListener("resize", () => {
     render(false);
+    startLabelTracking(700);
     requestAnimationFrame(showAudioStatus);
   });
 

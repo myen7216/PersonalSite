@@ -32,9 +32,19 @@
   const panel = lightbox.querySelector(".home-lightbox-panel");
   const content = lightbox.querySelector(".home-lightbox-content");
 
+  function finishClose() {
+    lightbox.classList.remove("closing");
+  }
+
   function closeLightbox() {
-    lightbox.classList.remove("open");
+    if (!lightbox.classList.contains("open")) {
+      return;
+    }
+
+    // Release page blur immediately so it eases out in parallel with the modal fade.
     document.body.classList.remove("home-lightbox-open");
+    lightbox.classList.remove("open");
+    lightbox.classList.add("closing");
   }
 
   function alignPanelToImage() {
@@ -81,6 +91,7 @@
     lightboxTitle.textContent = tile.dataset.photoTitle || img.alt || "Photo";
     lightboxDesc.textContent = tile.dataset.photoDesc || "A photo from this collage set.";
 
+    lightbox.classList.remove("closing");
     document.body.classList.add("home-lightbox-open");
     lightbox.classList.add("open");
     requestAnimationFrame(alignPanelToImage);
@@ -104,6 +115,15 @@
   lightbox.addEventListener("click", closeLightbox);
   lightboxImg?.addEventListener("click", (event) => event.stopPropagation());
   lightboxImg?.addEventListener("load", alignPanelToImage);
+  lightbox.addEventListener("transitionend", (event) => {
+    if (
+      event.target === lightbox &&
+      event.propertyName === "opacity" &&
+      !lightbox.classList.contains("open")
+    ) {
+      finishClose();
+    }
+  });
   window.addEventListener("resize", () => {
     if (lightbox.classList.contains("open")) {
       requestAnimationFrame(alignPanelToImage);
