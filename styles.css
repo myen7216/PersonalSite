@@ -325,6 +325,74 @@ body[data-page="home"] .home-clean {
   padding: 0.75in 0 0 0.75in;
 }
 
+@media (pointer: fine) {
+  body[data-page="home"],
+  body[data-page="home"] * {
+    cursor: none !important;
+  }
+
+  body[data-page="home"] .vision-cursor {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 10000;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0;
+    background: rgba(255, 255, 255, 0.055);
+    border: 1.5px solid rgba(255, 255, 255, 0.5);
+    box-shadow:
+      0 0 0 1px rgba(31, 31, 31, 0.2),
+      0 10px 24px rgba(26, 59, 38, 0.22),
+      0 3px 10px rgba(31, 31, 31, 0.18),
+      inset 0 0 12px rgba(255, 255, 255, 0.14);
+    backdrop-filter: url("#vision-cursor-distortion") saturate(1.06);
+    -webkit-backdrop-filter: url("#vision-cursor-distortion") saturate(1.06);
+    transition:
+      width 180ms ease,
+      height 180ms ease,
+      opacity 150ms ease,
+      background 180ms ease,
+      border-color 180ms ease,
+      box-shadow 180ms ease;
+  }
+
+  body[data-page="home"] .vision-cursor-core {
+    display: none;
+  }
+
+  body[data-page="home"].vision-cursor-active .vision-cursor {
+    opacity: 1;
+  }
+
+  body[data-page="home"].vision-cursor-interactive .vision-cursor {
+    width: 36px;
+    height: 36px;
+    background: rgba(255, 255, 255, 0.085);
+    border-color: rgba(255, 255, 255, 0.58);
+    box-shadow:
+      0 0 0 1px rgba(31, 31, 31, 0.22),
+      0 14px 34px rgba(26, 59, 38, 0.24),
+      0 4px 12px rgba(31, 31, 31, 0.2),
+      0 0 18px rgba(255, 255, 255, 0.14),
+      inset 0 0 16px rgba(255, 255, 255, 0.18);
+    backdrop-filter: url("#vision-cursor-distortion") saturate(1.1);
+    -webkit-backdrop-filter: url("#vision-cursor-distortion") saturate(1.1);
+  }
+
+  body[data-page="home"].vision-cursor-pressed .vision-cursor {
+    width: 20px;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.14);
+    box-shadow:
+      0 0 0 1px rgba(12, 106, 59, 0.16),
+      0 6px 18px rgba(26, 59, 38, 0.22),
+      inset 0 0 18px rgba(255, 255, 255, 0.5);
+  }
+}
+
 .home-clean-hero {
   padding: 0;
 }
