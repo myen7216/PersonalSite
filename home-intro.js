@@ -90,7 +90,41 @@
   const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   setupVisionCursor();
 
-  if (prefersReducedMotion) {
+  function setupScrollReveal() {
+    const revealNodes = Array.from(document.querySelectorAll(".scroll-reveal"));
+    if (!revealNodes.length) {
+      return;
+    }
+
+    if (prefersReducedMotion || !("IntersectionObserver" in window)) {
+      revealNodes.forEach((node) => node.classList.add("is-visible"));
+      return;
+    }
+
+    document.body.classList.add("scroll-reveal-ready");
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) {
+          return;
+        }
+
+        entry.target.classList.add("is-visible");
+        observer.unobserve(entry.target);
+      });
+    }, {
+      rootMargin: "0px 0px -12% 0px",
+      threshold: 0.18
+    });
+
+    revealNodes.forEach((node) => observer.observe(node));
+  }
+
+  setupScrollReveal();
+
+  const isTightViewport = window.matchMedia("(max-width: 560px)").matches;
+
+  if (prefersReducedMotion || isTightViewport) {
     return;
   }
 
@@ -99,7 +133,7 @@
   const RANDOM_SET = "abcdefghijklmnopqrstuvwxyz";
   const RANDOM_UPDATE_EVERY_MS = 55;
 
-  const targets = Array.from(document.querySelectorAll(".clean-name, .clean-blurb"));
+  const targets = Array.from(document.querySelectorAll(".clean-name"));
 
   if (!targets.length) {
     return;
