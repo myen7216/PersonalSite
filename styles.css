@@ -142,7 +142,7 @@ body[data-page="home"] .home-clean {
 .studio-top {
   position: relative;
   min-height: 0;
-  background: #050605;
+  background: var(--hero-green);
   color: var(--paper);
 }
 
@@ -169,7 +169,7 @@ body[data-page="home"] .home-clean {
   height: 0.35rem;
   margin-left: 0.18rem;
   border-radius: 50%;
-  background: var(--hero-green);
+  background: var(--signal-red);
   transform: translateY(-0.24rem);
 }
 
@@ -195,13 +195,13 @@ body[data-page="home"] .home-clean {
 
 .studio-nav a:hover,
 .studio-footer a:hover {
-  color: var(--hero-green);
+  color: var(--signal-red);
 }
 
 .studio-bottom {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(220px, 21vw);
-  column-gap: clamp(1rem, 3.8vw, 4.5rem);
+  grid-template-columns: minmax(0, 1fr) minmax(330px, 28vw);
+  column-gap: clamp(2.4rem, 5vw, 6rem);
   align-items: start;
   align-content: start;
   padding: clamp(0.5rem, 1.2vw, 0.95rem) clamp(0.75rem, 1.8vw, 1.6rem) clamp(1.25rem, 3vw, 2.25rem);
@@ -220,6 +220,8 @@ body[data-page="home"] .home-clean {
 }
 
 .studio-aside {
+  justify-self: end;
+  width: min(100%, 48ch);
   padding-top: 1.1rem;
 }
 
@@ -234,7 +236,7 @@ body[data-page="home"] .home-clean {
 
 .clean-blurb {
   margin: 0;
-  max-width: 27ch;
+  max-width: 48ch;
   border: none;
   border-radius: 0;
   background: transparent;
@@ -963,7 +965,7 @@ body.home-lightbox-open .dog {
   white-space: nowrap;
 }
 
-@media (max-width: 1000px) {
+@media (max-width: 1200px) {
   .studio-frame {
     min-height: 560px;
     height: 100svh;
@@ -993,11 +995,11 @@ body.home-lightbox-open .dog {
   }
 
   .clean-blurb {
-    max-width: 48ch;
+    max-width: 56ch;
   }
 
   .studio-aside {
-    width: min(100%, 48ch);
+    width: min(100%, 56ch);
     padding-top: 0;
     justify-self: start;
   }
