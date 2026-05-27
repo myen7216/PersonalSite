@@ -19,6 +19,12 @@ const modelAssets = [
     path: "/models/skateboard.glb",
     size: 1.4,
   },
+  {
+    id: "amp",
+    name: "Amp",
+    path: "/models/amp.glb",
+    size: 1.5,
+  },
 ];
 
 export default function ModelViewerPage() {

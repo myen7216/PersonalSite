@@ -3,6 +3,8 @@
 import { motion } from "motion/react";
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
+import { fridgeItemOrder } from "../components/fridgeData";
+import type { FridgeItem } from "../components/fridgeData";
 
 const FrostCanvas = dynamic(() => import("../components/FrostCanvas"), {
   ssr: false,
@@ -11,34 +13,11 @@ const FrostCanvas = dynamic(() => import("../components/FrostCanvas"), {
 const fridgeEase = [0.25, 0.1, 0.25, 1] as const;
 const fridgeAnimationMs = 1450;
 
-type FridgeItem = {
-  id: string;
-};
-
-const fridgeItems: FridgeItem[] = [
-  { id: "tech" },
-  { id: "music" },
-  { id: "school" },
-  { id: "ride" },
-  { id: "travel" },
-  { id: "socials" },
-  { id: "hands" },
-];
+const fridgeItems: FridgeItem[] = fridgeItemOrder.map((id) => ({ id }));
 
 export default function Home() {
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
-  const [isCompact, setIsCompact] = useState(false);
-
-  useEffect(() => {
-    const media = window.matchMedia("(max-width: 760px)");
-    const syncCompactState = () => setIsCompact(media.matches);
-
-    syncCompactState();
-    media.addEventListener("change", syncCompactState);
-
-    return () => media.removeEventListener("change", syncCompactState);
-  }, []);
 
   useEffect(() => {
     if (!isClosing) return;
@@ -80,19 +59,11 @@ export default function Home() {
     .filter(Boolean)
     .join(" ");
 
-  const fridgePose = isCompact
-    ? {
-        scaleX: isOpen ? 1.16 : 0.82,
-        scaleY: isOpen ? 1.16 : 0.82,
-        x: 0,
-        y: isOpen ? 54 : 16,
-      }
-    : {
-        scaleX: isOpen ? 1.32 : 0.56,
-        scaleY: isOpen ? 1.32 : 0.78,
-        x: isOpen ? 0 : 132,
-        y: isOpen ? 150 : 9,
-      };
+  const fridgePose = {
+    scale: isOpen ? 1.16 : 0.82,
+    x: 0,
+    y: isOpen ? 54 : 16,
+  };
 
   return (
     <main className={stageClassName}>
@@ -105,8 +76,7 @@ export default function Home() {
           initial={false}
           animate={fridgePose}
           transition={{
-            scaleX: { duration: 1.45, ease: fridgeEase },
-            scaleY: { duration: 1.45, ease: fridgeEase },
+            scale: { duration: 1.45, ease: fridgeEase },
             x: { duration: 1.45, ease: fridgeEase },
             y: { duration: 1.45, ease: fridgeEase },
           }}
@@ -131,7 +101,6 @@ export default function Home() {
               }}
             >
               <span className="handle" />
-              <span className="door-thickness" aria-hidden="true" />
             </div>
             {isOpen && (
               <button
